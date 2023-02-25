@@ -7,7 +7,6 @@ import (
 	"log"
 	"math/big"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/TwiN/go-color"
@@ -16,6 +15,7 @@ import (
 	"github.com/dominant-strategies/go-quai/core/types"
 	"github.com/dominant-strategies/go-quai/quaiclient/ethclient"
 	"github.com/dominant-strategies/quai-cpu-miner/util"
+	"github.com/urfave/cli/v2"
 )
 
 const (
@@ -25,7 +25,17 @@ const (
 )
 
 var (
-	exit = make(chan bool)
+	exit       = make(chan bool)
+	RegionFlag = cli.IntFlag{
+		Name:    "region",
+		Aliases: []string{"r"},
+		Usage:   "CPU Miner Region flag",
+	}
+	ZoneFlag = cli.IntFlag{
+		Name:    "zone",
+		Aliases: []string{"z"},
+		Usage:   "CPU Miner Zone flag",
+	}
 )
 
 type Miner struct {
@@ -34,7 +44,7 @@ type Miner struct {
 
 	// Blake3pow consensus engine used to seal a block
 	engine *blake3pow.Blake3pow
-	
+
 	// Current header to mine
 	header *types.Header
 
@@ -45,7 +55,7 @@ type Miner struct {
 	updateCh chan *types.Header
 
 	// Channel to submit completed work
-	resultCh  chan *types.Header
+	resultCh chan *types.Header
 
 	// Track previous block number for pretty printing
 	previousNumber [common.HierarchyDepth]uint64
@@ -99,15 +109,55 @@ func main() {
 	if err != nil {
 		log.Fatal("cannot load config:", err)
 	}
-	// Parse mining location from args
-	if len(os.Args) > 2 {
-		raw := os.Args[1:3]
-		region, _ := strconv.Atoi(raw[0])
-		zone, _ := strconv.Atoi(raw[1])
-		config.Location = common.Location{byte(region), byte(zone)}
-	} else {
-		log.Fatal("Not enough arguments supplied")
+	app := &cli.App{
+		Name: "Quai CPU Miner",
+		Flags: []cli.Flag{
+			&RegionFlag,
+			&ZoneFlag,
+		},
+		Commands: []*cli.Command{
+			&cli.Command{
+				Name:    "help",
+				Aliases: []string{"h"},
+				After: func(cCtx *cli.Context) error {
+					return nil
+				},
+			},
+		},
+		Action: func(ctx *cli.Context) error {
+			err := verifyFlags(ctx)
+			if err != nil {
+				return err
+			}
+			config.Location = common.Location{byte(ctx.Int(RegionFlag.Name)), byte(ctx.Int(ZoneFlag.Name))}
+			StartMiner(config)
+			return nil
+		},
 	}
+
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
+	<-exit
+}
+
+func verifyFlags(ctx *cli.Context) error {
+	// If the Region or Zone flags are not set, or improperly set returns
+	// Appropriate errors
+	if !ctx.IsSet(RegionFlag.Name) {
+		return errors.New("region flag is not set")
+	} else if ctx.Int(RegionFlag.Name) < 0 || ctx.Int(RegionFlag.Name) > 2 {
+		return errors.New("current ontology prime only has 3 regions, so please input between 0 and 2")
+	}
+	if !ctx.IsSet(ZoneFlag.Name) {
+		return errors.New("zone flag is not set")
+	} else if ctx.Int(ZoneFlag.Name) < 0 || ctx.Int(ZoneFlag.Name) > 2 {
+		return errors.New("current ontology each region only has 3 zones, so please input between 0 and 2")
+	}
+	return nil
+}
+
+func StartMiner(config util.Config) {
 	// Build manager config
 	blake3Config := blake3pow.Config{
 		NotifyFull: true,
@@ -118,9 +168,9 @@ func main() {
 		engine:         blake3Engine,
 		sliceClients:   connectToSlice(config),
 		header:         types.EmptyHeader(),
-		updateCh:      make(chan *types.Header, resultQueueSize),
+		updateCh:       make(chan *types.Header, resultQueueSize),
 		resultCh:       make(chan *types.Header, resultQueueSize),
-		previousNumber: [common.HierarchyDepth]uint64{0,0,0},
+		previousNumber: [common.HierarchyDepth]uint64{0, 0, 0},
 	}
 	log.Println("Starting Quai cpu miner in location ", config.Location)
 	m.fetchPendingHeader()
@@ -128,10 +178,9 @@ func main() {
 	go m.resultLoop()
 	go m.miningLoop()
 	go m.hashratePrinter()
-	<-exit
 }
 
-func (m *Miner) client(ctx int) *ethclient.Client {return m.sliceClients[ctx]}
+func (m *Miner) client(ctx int) *ethclient.Client { return m.sliceClients[ctx] }
 
 // subscribePendingHeader subscribes to the head of the mining nodes in order to pass
 // the most up to date block to the miner within the manager.
@@ -181,7 +230,7 @@ func (m *Miner) miningLoop() error {
 			// Interrupt previous sealing operation
 			interrupt()
 			stopCh = make(chan struct{})
-			number := [common.HierarchyDepth]uint64{header.NumberU64(common.PRIME_CTX),header.NumberU64(common.REGION_CTX),header.NumberU64(common.ZONE_CTX)}
+			number := [common.HierarchyDepth]uint64{header.NumberU64(common.PRIME_CTX), header.NumberU64(common.REGION_CTX), header.NumberU64(common.ZONE_CTX)}
 			primeStr := fmt.Sprint(number[common.PRIME_CTX])
 			regionStr := fmt.Sprint(number[common.REGION_CTX])
 			zoneStr := fmt.Sprint(number[common.ZONE_CTX])
@@ -198,7 +247,7 @@ func (m *Miner) miningLoop() error {
 				}
 				log.Println("Mining Block: ", fmt.Sprintf("[%s %s %s]", primeStr, regionStr, zoneStr), "location", header.Location(), "difficulty", header.DifficultyArray())
 			}
-			m.previousNumber = [common.HierarchyDepth]uint64{header.NumberU64(common.PRIME_CTX),header.NumberU64(common.REGION_CTX),header.NumberU64(common.ZONE_CTX)}
+			m.previousNumber = [common.HierarchyDepth]uint64{header.NumberU64(common.PRIME_CTX), header.NumberU64(common.REGION_CTX), header.NumberU64(common.ZONE_CTX)}
 			header.SetTime(uint64(time.Now().Unix()))
 			if err := m.engine.Seal(header, m.resultCh, stopCh); err != nil {
 				log.Println("Block sealing failed", "err", err)
@@ -210,7 +259,7 @@ func (m *Miner) miningLoop() error {
 // WatchHashRate is a simple method to watch the hashrate of our miner and log the output.
 func (m *Miner) hashratePrinter() {
 	ticker := time.NewTicker(60 * time.Second)
-	toSiUnits := func (hr float64) (float64, string) {
+	toSiUnits := func(hr float64) (float64, string) {
 		reduced := hr
 		order := 0
 		for {
@@ -218,7 +267,7 @@ func (m *Miner) hashratePrinter() {
 				reduced /= 1000
 				order += 3
 			} else {
-				break;
+				break
 			}
 		}
 		switch order {
