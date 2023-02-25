@@ -13,14 +13,14 @@ quai-cpu-miner:
 
 # to manually select a location to mine
 run-mine:
-	./build/bin/quai-cpu-miner $(region) $(zone)
+	./build/bin/quai-cpu-miner --region $(region) --zone $(zone)
 
 # to run in the background (manually set location)
 run-mine-background:
 ifeq (,$(wildcard logs))
 	mkdir logs
 endif
-	@nohup ./build/bin/quai-cpu-miner $(region) $(zone) 1 >> logs/slice-$(region)-$(zone).log 2>&1 &
+	@nohup ./build/bin/quai-cpu-miner --region $(region) --zone $(zone) >> logs/slice-$(region)-$(zone).log 2>&1 &
 
 stop:
 ifeq ($(shell uname -s),Darwin)
