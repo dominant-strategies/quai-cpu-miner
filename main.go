@@ -13,7 +13,7 @@ import (
 
 	"github.com/TwiN/go-color"
 	"github.com/dominant-strategies/go-quai/common"
-	"github.com/dominant-strategies/go-quai/consensus/progpow"
+	"github.com/dominant-strategies/go-quai/consensus/blake3pow"
 	"github.com/dominant-strategies/go-quai/core/types"
 	"github.com/dominant-strategies/go-quai/quaiclient/ethclient"
 
@@ -35,8 +35,8 @@ type Miner struct {
 	// Miner config object
 	config util.Config
 
-	// Progpow consensus engine used to seal a block
-	engine *progpow.Progpow
+	// Blake3pow consensus engine used to seal a block
+	engine *blake3pow.Blake3pow
 
 	// Current header to mine
 	header *types.Header
@@ -139,10 +139,10 @@ func main() {
 		config.Location = common.Location{byte(region), byte(zone)}
 	}
 	// Build manager config
-	blake3Config := progpow.Config{
+	blake3Config := blake3pow.Config{
 		NotifyFull: true,
 	}
-	blake3Engine := progpow.New(blake3Config, nil, false)
+	blake3Engine := blake3pow.New(blake3Config, nil, false)
 	m := &Miner{
 		config:         config,
 		engine:         blake3Engine,
@@ -328,9 +328,9 @@ func (m *Miner) resultLoop() {
 	for {
 		select {
 		case header := <-m.resultCh:
-			_, order, err := m.engine.CalcOrder(header)
+			order, err := header.CalcOrder()
 			if err != nil {
-				log.Println("Mined block had invalid order: err=", err)
+				log.Println("Mined block had invalid order")
 				return
 			}
 			if !m.config.Proxy {
