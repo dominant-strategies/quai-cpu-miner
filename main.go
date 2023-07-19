@@ -328,7 +328,7 @@ func (m *Miner) resultLoop() {
 	for {
 		select {
 		case header := <-m.resultCh:
-			order, err := header.CalcOrder()
+			_, order, err := m.engine.CalcOrder(header)
 			if err != nil {
 				log.Println("Mined block had invalid order")
 				return
