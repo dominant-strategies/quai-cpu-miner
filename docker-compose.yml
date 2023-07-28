@@ -1,0 +1,127 @@
+version: '3'
+services:
+  quai-cpu-miner-0-0:
+    image: quainetwork/quai-cpu-miner:291dbef
+    network_mode: host
+    volumes:
+      - ./config/config.yaml:/go/config/config.yaml
+    environment:
+      - REGION=0
+      - ZONE=0
+    deploy:
+      resources:
+        limits:
+          cpus: '.4'
+          memory: 4G
+
+  quai-cpu-miner-0-1:
+    image: quainetwork/quai-cpu-miner:291dbef
+    network_mode: host
+    volumes:
+      - ./config/config.yaml:/go/config/config.yaml
+    environment:
+      - REGION=0
+      - ZONE=1
+    deploy:
+      resources:
+        limits:
+          cpus: '.4'
+          memory: 4G
+
+  quai-cpu-miner-0-2:
+    image: quainetwork/quai-cpu-miner:291dbef
+    network_mode: host
+    volumes:
+      - ./config/config.yaml:/go/config/config.yaml
+    environment:
+      - REGION=0
+      - ZONE=2
+    deploy:
+      resources:
+        limits:
+          cpus: '.4'
+          memory: 4G
+
+  quai-cpu-miner-1-0:
+    image: quainetwork/quai-cpu-miner:291dbef
+    network_mode: host
+    volumes:
+      - ./config/config.yaml:/go/config/config.yaml
+    environment:
+      - REGION=1
+      - ZONE=0
+    deploy:
+      resources:
+        limits:
+          cpus: '.4'
+          memory: 4G
+
+  quai-cpu-miner-1-1:
+    image: quainetwork/quai-cpu-miner:291dbef
+    network_mode: host
+    volumes:
+      - ./config/config.yaml:/go/config/config.yaml
+    environment:
+      - REGION=1
+      - ZONE=1
+    deploy:
+      resources:
+        limits:
+          cpus: '.4'
+          memory: 4G
+
+  quai-cpu-miner-1-2:
+    image: quainetwork/quai-cpu-miner:291dbef
+    network_mode: host
+    volumes:
+      - ./config/config.yaml:/go/config/config.yaml
+    environment:
+      - REGION=1
+      - ZONE=2
+    deploy:
+      resources:
+        limits:
+          cpus: '.4'
+          memory: 4G
+  quai-cpu-miner-2-0:
+    image: quainetwork/quai-cpu-miner:291dbef
+    network_mode: host
+    volumes:
+      - ./config/config.yaml:/go/config/config.yaml
+    environment:
+      - REGION=2
+      - ZONE=0
+    deploy:
+      resources:
+        limits:
+          cpus: '.4'
+          memory: 4G
+
+  quai-cpu-miner-2-1:
+    image: quainetwork/quai-cpu-miner:291dbef
+    network_mode: host
+    volumes:
+      - ./config/config.yaml:/go/config/config.yaml
+    environment:
+      - REGION=2
+      - ZONE=1
+    deploy:
+      resources:
+        limits:
+          cpus: '.4'
+          memory: 4G
+
+  quai-cpu-miner-2-2:
+    image: quainetwork/quai-cpu-miner:291dbef
+    network_mode: host
+    volumes:
+      - ./config/config.yaml:/go/config/config.yaml
+    environment:
+      - REGION=2
+      - ZONE=2
+    deploy:
+      resources:
+        limits:
+          cpus: '.4'
+          memory: 4G
+
