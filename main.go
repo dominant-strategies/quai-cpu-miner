@@ -22,9 +22,10 @@ import (
 
 const (
 	// resultQueueSize is the size of channel listening to sealing result.
-	resultQueueSize = 10
-	maxRetryDelay   = 60 * 60 * 4 // 4 hours
-	USER_AGENT_VER  = "0.1"
+	resultQueueSize       = 10
+	maxRetryDelay         = 60 * 60 * 4 // 4 hours
+	USER_AGENT_VER        = "0.1"
+	miningWorkRefreshRate = 2 * time.Second
 )
 
 var (
@@ -55,6 +56,8 @@ type Miner struct {
 
 	// Track previous block number for pretty printing
 	previousNumber [common.HierarchyDepth]uint64
+
+	miningWorkRefresh *time.Ticker
 
 	// Tracks the latest JSON RPC ID to send to the proxy or node.
 	latestId uint64
@@ -144,12 +147,13 @@ func main() {
 	}
 	blake3Engine := blake3pow.New(blake3Config, nil, false)
 	m := &Miner{
-		config:         config,
-		engine:         blake3Engine,
-		header:         types.EmptyHeader(),
-		updateCh:       make(chan *types.Header, resultQueueSize),
-		resultCh:       make(chan *types.Header, resultQueueSize),
-		previousNumber: [common.HierarchyDepth]uint64{0, 0, 0},
+		config:            config,
+		engine:            blake3Engine,
+		header:            types.EmptyHeader(),
+		updateCh:          make(chan *types.Header, resultQueueSize),
+		resultCh:          make(chan *types.Header, resultQueueSize),
+		previousNumber:    [common.HierarchyDepth]uint64{0, 0, 0},
+		miningWorkRefresh: time.NewTicker(miningWorkRefreshRate),
 	}
 	log.Println("Starting Quai cpu miner in location ", config.Location)
 	if config.Proxy {
@@ -166,6 +170,8 @@ func main() {
 	go m.resultLoop()
 	go m.miningLoop()
 	go m.hashratePrinter()
+	go m.refreshMiningWork()
+	defer m.miningWorkRefresh.Stop()
 	<-exit
 }
 
@@ -254,6 +260,7 @@ func (m *Miner) miningLoop() error {
 	for {
 		select {
 		case header := <-m.updateCh:
+			m.miningWorkRefresh.Reset(miningWorkRefreshRate)
 			// Mine the header here
 			// Return the valid header with proper nonce and mix digest
 			// Interrupt previous sealing operation
@@ -281,6 +288,16 @@ func (m *Miner) miningLoop() error {
 			if err := m.engine.Seal(header, m.resultCh, stopCh); err != nil {
 				log.Println("Block sealing failed", "err", err)
 			}
+		}
+	}
+}
+
+// refreshMiningWork is a simple method to refresh the mining the work
+func (m *Miner) refreshMiningWork() {
+	for {
+		select {
+		case <-m.miningWorkRefresh.C:
+			m.fetchPendingHeaderNode()
 		}
 	}
 }
