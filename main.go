@@ -41,7 +41,6 @@ type Miner struct {
 
 	// Current header to mine
 	header *types.Header
-
 	// RPC client connection to mining proxy
 	proxyClient *util.MinerSession
 
@@ -257,9 +256,16 @@ func (m *Miner) miningLoop() error {
 			stopCh = nil
 		}
 	}
+	var header *types.Header
 	for {
 		select {
-		case header := <-m.updateCh:
+		case newHead := <-m.updateCh:
+
+			if header != nil && newHead.SealHash() == header.SealHash() {
+				continue
+			}
+
+			header := newHead
 			m.miningWorkRefresh.Reset(miningWorkRefreshRate)
 			// Mine the header here
 			// Return the valid header with proper nonce and mix digest
@@ -288,6 +294,7 @@ func (m *Miner) miningLoop() error {
 			if err := m.engine.Seal(header, m.resultCh, stopCh); err != nil {
 				log.Println("Block sealing failed", "err", err)
 			}
+		default:
 		}
 	}
 }

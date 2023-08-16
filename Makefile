@@ -29,7 +29,7 @@ run-mine-background:
 ifeq (,$(wildcard logs))
 	mkdir logs
 endif
-	@nohup nice -n 19 ./build/bin/quai-cpu-miner $(region) $(zone) 1 >> logs/slice-$(region)-$(zone).log 2>&1 &
+	@nohup nice -n 15 ./build/bin/quai-cpu-miner $(region) $(zone) 1 >> logs/slice-$(region)-$(zone).log 2>&1 &
 
 stop:
 ifeq ($(shell uname -s),Darwin)
