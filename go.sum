@@ -124,6 +124,7 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/deckarep/golang-set v1.8.0 h1:sk9/l/KqpunDwP7pSjUg0keiOOLEnOBHzykLrsPppp4=
 github.com/deckarep/golang-set v1.8.0/go.mod h1:5nI87KwE7wgsBU1F4GKAw2Qod7p5kyS383rP6+o6qqo=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
+github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2/go.mod h1:SqUrOPUnsFjfmXRMNPybcSiG0BgUW2AuFH8PAnS2iTw=
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=
 github.com/dominant-strategies/bn256 v0.0.0-20220930122411-fbf930a7493d h1:hkL13khTTS48QfWmjRFWpuzhOqu6S0cjpJOzPoBEDb4=
@@ -132,6 +133,10 @@ github.com/dominant-strategies/go-quai v0.13.0-pre.0.0.20230816010016-691dbd9bd5
 github.com/dominant-strategies/go-quai v0.13.0-pre.0.0.20230816010016-691dbd9bd5c3/go.mod h1:kAunbrjnH8rHYUTbHsNJvR/qqZyPKXFICmuROlhPBuY=
 github.com/dominant-strategies/go-quai v0.13.0-pre.0.0.20230816143821-481abf8ae44d h1:YEzyIMOguQ9XKDwhMRHrzzclz9ggC/bHa/s3RYyy6gk=
 github.com/dominant-strategies/go-quai v0.13.0-pre.0.0.20230816143821-481abf8ae44d/go.mod h1:kAunbrjnH8rHYUTbHsNJvR/qqZyPKXFICmuROlhPBuY=
+github.com/dominant-strategies/go-quai v0.13.0-pre.0.0.20230816230446-127143dc3b06 h1:Hb4g7DL5ZZ2V73sYrJlTe/KsIdckzkPqhSuYkodDXTw=
+github.com/dominant-strategies/go-quai v0.13.0-pre.0.0.20230816230446-127143dc3b06/go.mod h1:LQ/o4Mrx1YV/4TJK2o3fKuJIx811LpirNCk1FrrxkTQ=
+github.com/dominant-strategies/go-quai v0.13.0-pre.0.0.20230819045426-76c7bc9df4e7 h1:mtkZkkb8beUpQ0MqSYLFlmhsuekAnA12yh2+vLCOXxA=
+github.com/dominant-strategies/go-quai v0.13.0-pre.0.0.20230819045426-76c7bc9df4e7/go.mod h1:wVI8ld03OseRGpMQ1f+4SjTohhzuW0iahXrjD/3Dqys=
 github.com/dominant-strategies/go-quai-stratum v0.1.1-0.20230411175350-8a5f55caee55 h1:TDyOiTSueb5XoQhGFK57dZZkEsQGpzGhk7ppSC9YIV0=
 github.com/dominant-strategies/go-quai-stratum v0.1.1-0.20230411175350-8a5f55caee55/go.mod h1:MYwAEiEynMvuQeEIJaxL0rn9tJ7xKg6XCr4cQ0i3TFo=
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
