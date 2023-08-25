@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/INFURA/go-ethlibs v0.0.0-20230210163729-fc6ca4235802
 	github.com/TwiN/go-color v1.4.0
-	github.com/dominant-strategies/go-quai v0.13.0-pre.0.0.20230819045426-76c7bc9df4e7
+	github.com/dominant-strategies/go-quai v0.13.0-pre.0.0.20230825191539-a7a47461aadb
 	github.com/dominant-strategies/go-quai-stratum v0.1.1-0.20230411175350-8a5f55caee55
 	github.com/spf13/viper v1.14.0
 )
