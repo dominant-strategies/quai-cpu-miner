@@ -143,6 +143,8 @@ github.com/dominant-strategies/go-quai v0.13.0-pre.0.0.20230825191539-a7a47461aa
 github.com/dominant-strategies/go-quai v0.13.0-pre.0.0.20230825191539-a7a47461aadb/go.mod h1:LQ/o4Mrx1YV/4TJK2o3fKuJIx811LpirNCk1FrrxkTQ=
 github.com/dominant-strategies/go-quai v0.13.0-rc.0 h1:aZpS8S8KF9N9S7zagdfLMegWmp+sFSXjFuaQtWeFO/g=
 github.com/dominant-strategies/go-quai v0.13.0-rc.0/go.mod h1:LQ/o4Mrx1YV/4TJK2o3fKuJIx811LpirNCk1FrrxkTQ=
+github.com/dominant-strategies/go-quai v0.13.0-rc.5.0.20230831183648-e8d50e98d812 h1:vtIZXzPs2OGLjrHj9LsBZpjmtshl0ZFsKl6V787flrU=
+github.com/dominant-strategies/go-quai v0.13.0-rc.5.0.20230831183648-e8d50e98d812/go.mod h1:LQ/o4Mrx1YV/4TJK2o3fKuJIx811LpirNCk1FrrxkTQ=
 github.com/dominant-strategies/go-quai-stratum v0.1.1-0.20230411175350-8a5f55caee55 h1:TDyOiTSueb5XoQhGFK57dZZkEsQGpzGhk7ppSC9YIV0=
 github.com/dominant-strategies/go-quai-stratum v0.1.1-0.20230411175350-8a5f55caee55/go.mod h1:MYwAEiEynMvuQeEIJaxL0rn9tJ7xKg6XCr4cQ0i3TFo=
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
