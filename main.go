@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"math/rand"
 	"os"
 	"strconv"
 	"time"
@@ -21,6 +22,7 @@ import (
 	"github.com/dominant-strategies/go-quai/core/types"
 
 	"github.com/dominant-strategies/quai-cpu-miner/util"
+	lru "github.com/hnlq715/golang-lru"
 )
 
 const (
@@ -64,6 +66,8 @@ type Miner struct {
 
 	// Tracks the latest JSON RPC ID to send to the proxy or node.
 	latestId uint64
+
+	miningCache *lru.Cache
 }
 
 // Clients for RPC connection to the Prime, region, & zone ports belonging to the
@@ -152,6 +156,7 @@ func main() {
 	} else {
 		engine = progpow.New(progpow.Config{NotifyFull: true, NodeLocation: common.Location{0, 0}}, nil, false, logger)
 	}
+	miningCache, _ := lru.New(2)
 
 	m := &Miner{
 		config:            config,
@@ -161,6 +166,7 @@ func main() {
 		resultCh:          make(chan *types.Header, resultQueueSize),
 		previousNumber:    [common.HierarchyDepth]uint64{0, 0, 0},
 		miningWorkRefresh: time.NewTicker(miningWorkRefreshRate),
+		miningCache:       miningCache,
 	}
 	log.Println("Starting Quai cpu miner in location ", config.Location)
 	if config.Proxy {
@@ -268,11 +274,22 @@ func (m *Miner) miningLoop() error {
 		select {
 		case newHead := <-m.updateCh:
 
-			if header != nil && newHead.SealHash() == header.SealHash() {
+			if header != nil {
 				continue
 			}
 
 			header := newHead
+
+			m.miningCache.ContainsOrAdd(header.SealHash(), header)
+
+			keys := m.miningCache.Keys()
+			if len(keys) > 0 {
+				value, exists := m.miningCache.Get(keys[rand.Intn(len(keys))])
+				if exists {
+					header = value.(*types.Header)
+				}
+			}
+
 			m.miningWorkRefresh.Reset(miningWorkRefreshRate)
 			// Mine the header here
 			// Return the valid header with proper nonce and mix digest
