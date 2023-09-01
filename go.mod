@@ -11,6 +11,7 @@ require (
 	github.com/TwiN/go-color v1.4.0
 	github.com/dominant-strategies/go-quai v0.33.1-0.20241002163101-901344291c84
 	github.com/dominant-strategies/go-quai-stratum v0.3.0
+	github.com/hnlq715/golang-lru v0.4.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.17.0
 	google.golang.org/protobuf v1.31.0
