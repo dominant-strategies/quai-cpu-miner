@@ -2,6 +2,8 @@ module github.com/dominant-strategies/quai-cpu-miner
 
 go 1.20
 
+replace github.com/dominant-strategies/go-quai => ../go-quai
+
 require (
 	github.com/INFURA/go-ethlibs v0.0.0-20230210163729-fc6ca4235802
 	github.com/TwiN/go-color v1.4.0

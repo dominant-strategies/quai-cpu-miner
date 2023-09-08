@@ -15,7 +15,6 @@ import (
 	"github.com/TwiN/go-color"
 	"github.com/dominant-strategies/go-quai/common"
 	"github.com/dominant-strategies/go-quai/consensus/blake3pow"
-	"github.com/dominant-strategies/go-quai/consensus/progpow"
 	"github.com/dominant-strategies/go-quai/core/types"
 	"github.com/dominant-strategies/go-quai/quaiclient/ethclient"
 
@@ -145,11 +144,7 @@ func main() {
 	}
 	var engine consensus.Engine
 
-	if config.RunBlake3 {
-		engine = blake3pow.New(blake3pow.Config{NotifyFull: true}, nil, false)
-	} else {
-		engine = progpow.New(progpow.Config{NotifyFull: true}, nil, false)
-	}
+	engine = blake3pow.New(blake3pow.Config{NotifyFull: true}, nil, false)
 
 	m := &Miner{
 		config:            config,
