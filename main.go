@@ -266,12 +266,11 @@ func (m *Miner) miningLoop() error {
 	for {
 		select {
 		case newHead := <-m.updateCh:
-
 			if header != nil && newHead.SealHash() == header.SealHash() {
 				continue
 			}
 
-			header := newHead
+			header = newHead
 			m.miningWorkRefresh.Reset(miningWorkRefreshRate)
 			// Mine the header here
 			// Return the valid header with proper nonce and mix digest
@@ -279,10 +278,10 @@ func (m *Miner) miningLoop() error {
 			interrupt()
 			stopCh = make(chan struct{})
 			number := [common.HierarchyDepth]uint64{header.NumberU64(common.PRIME_CTX), header.NumberU64(common.REGION_CTX), header.NumberU64(common.ZONE_CTX)}
-			primeStr := fmt.Sprint(number[common.PRIME_CTX])
-			regionStr := fmt.Sprint(number[common.REGION_CTX])
-			zoneStr := fmt.Sprint(number[common.ZONE_CTX])
 			if number != m.previousNumber {
+				primeStr := fmt.Sprint(number[common.PRIME_CTX])
+				regionStr := fmt.Sprint(number[common.REGION_CTX])
+				zoneStr := fmt.Sprint(number[common.ZONE_CTX])
 				if number[common.PRIME_CTX] != m.previousNumber[common.PRIME_CTX] {
 					primeStr = color.Ize(color.Red, primeStr)
 					regionStr = color.Ize(color.Red, regionStr)
