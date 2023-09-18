@@ -148,7 +148,7 @@ func main() {
 	}
 	var engine consensus.Engine
 	engine = blake3pow.New(blake3pow.Config{NotifyFull: true}, nil, false)
-	miningCache, _ := lru.New(10)
+	miningCache, _ := lru.New(2)
 
 	m := &Miner{
 		config:            config,
