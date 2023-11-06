@@ -92,26 +92,8 @@ func connectToSlice(config util.Config) SliceClients {
 	var err error
 	loc := config.Location
 	clients := SliceClients{}
-	primeConnected := false
-	regionConnected := false
 	zoneConnected := false
-	for !primeConnected || !regionConnected || !zoneConnected {
-		if config.PrimeURL != "" && !primeConnected {
-			clients[common.PRIME_CTX], err = ethclient.Dial(config.PrimeURL)
-			if err != nil {
-				log.Println("Unable to connect to node:", "Prime", config.PrimeURL)
-			} else {
-				primeConnected = true
-			}
-		}
-		if config.RegionURLs[loc.Region()] != "" && !regionConnected {
-			clients[common.REGION_CTX], err = ethclient.Dial(config.RegionURLs[loc.Region()])
-			if err != nil {
-				log.Println("Unable to connect to node:", "Region", config.RegionURLs[loc.Region()])
-			} else {
-				regionConnected = true
-			}
-		}
+	for !zoneConnected {
 		if config.ZoneURLs[loc.Region()][loc.Zone()] != "" && !zoneConnected {
 			clients[common.ZONE_CTX], err = ethclient.Dial(config.ZoneURLs[loc.Region()][loc.Zone()])
 			if err != nil {
