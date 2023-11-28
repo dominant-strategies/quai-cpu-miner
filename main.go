@@ -65,6 +65,8 @@ type Miner struct {
 	latestId uint64
 
 	interruptMu sync.RWMutex
+
+	sleep int64
 }
 
 // Clients for RPC connection to the Prime, region, & zone ports belonging to the
@@ -139,6 +141,7 @@ func main() {
 		resultCh:          make(chan *types.Header, resultQueueSize),
 		previousNumber:    [common.HierarchyDepth]uint64{0, 0, 0},
 		miningWorkRefresh: time.NewTicker(miningWorkRefreshRate),
+		sleep:             1000,
 	}
 	log.Println("Starting Quai cpu miner in location ", config.Location)
 	if config.Proxy {
@@ -233,7 +236,7 @@ func (m *Miner) fetchPendingHeaderNode() {
 // miningLoop iterates on a new header and passes the result to m.resultCh. The result is called within the method.
 func (m *Miner) miningLoop() error {
 	var (
-		stopCh chan struct{}
+		stopCh = make(chan struct{})
 	)
 	// interrupt aborts the in-flight sealing task.
 	interrupt := func() {
@@ -242,6 +245,7 @@ func (m *Miner) miningLoop() error {
 		if stopCh != nil {
 			close(stopCh)
 			stopCh = nil
+			stopCh = make(chan struct{})
 		}
 	}
 
@@ -260,7 +264,6 @@ func (m *Miner) miningLoop() error {
 			// Return the valid header with proper nonce and mix digest
 			// Interrupt previous sealing operation
 			interrupt()
-			stopCh = make(chan struct{})
 			number := [common.HierarchyDepth]uint64{header.NumberU64(common.PRIME_CTX), header.NumberU64(common.REGION_CTX), header.NumberU64(common.ZONE_CTX)}
 			primeStr := fmt.Sprint(number[common.PRIME_CTX])
 			regionStr := fmt.Sprint(number[common.REGION_CTX])
@@ -285,17 +288,25 @@ func (m *Miner) miningLoop() error {
 				log.Println("Block sealing failed", "err", err)
 			}
 
+			ticker := time.NewTicker(10 * time.Millisecond)
 			go func() {
-				ticker := time.NewTicker(10 * time.Millisecond)
 				for {
 					select {
-					case <-m.updateCh:
-						interrupt()
+					case <-stopCh:
 						ticker.Stop()
 						return
 					case <-ticker.C:
 						interrupt()
-						stopCh = make(chan struct{})
+						hashrate := int64(m.engine.Hashrate())
+						error := 1000 - hashrate
+						newSleep := m.sleep - error
+						if newSleep > 0 {
+							m.sleep = newSleep
+						} else {
+							m.sleep = 0
+						}
+						time.Sleep(time.Microsecond * time.Duration(m.sleep))
+
 						header.SetTime(uint64(time.Now().UnixMilli()))
 						if err := m.engine.Seal(header, m.resultCh, stopCh); err != nil {
 							log.Println("Block sealing failed", "err", err)
