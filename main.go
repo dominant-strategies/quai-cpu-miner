@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 
 	"os"
 	"strconv"
@@ -62,6 +63,8 @@ type Miner struct {
 
 	// Tracks the latest JSON RPC ID to send to the proxy or node.
 	latestId uint64
+
+	interruptMu sync.RWMutex
 }
 
 // Clients for RPC connection to the Prime, region, & zone ports belonging to the
@@ -234,11 +237,14 @@ func (m *Miner) miningLoop() error {
 	)
 	// interrupt aborts the in-flight sealing task.
 	interrupt := func() {
+		m.interruptMu.Lock()
+		defer m.interruptMu.Unlock()
 		if stopCh != nil {
 			close(stopCh)
 			stopCh = nil
 		}
 	}
+
 	var header *types.Header
 	for {
 		select {
@@ -273,10 +279,31 @@ func (m *Miner) miningLoop() error {
 				log.Println("Mining Block: ", fmt.Sprintf("[%s %s %s]", primeStr, regionStr, zoneStr), "location", header.Location(), "difficulty", header.Difficulty())
 			}
 			m.previousNumber = [common.HierarchyDepth]uint64{header.NumberU64(common.PRIME_CTX), header.NumberU64(common.REGION_CTX), header.NumberU64(common.ZONE_CTX)}
-			header.SetTime(uint64(time.Now().Unix()))
+
+			header.SetTime(uint64(time.Now().UnixMilli()))
 			if err := m.engine.Seal(header, m.resultCh, stopCh); err != nil {
 				log.Println("Block sealing failed", "err", err)
 			}
+
+			go func() {
+				ticker := time.NewTicker(10 * time.Millisecond)
+				for {
+					select {
+					case <-m.updateCh:
+						interrupt()
+						ticker.Stop()
+						return
+					case <-ticker.C:
+						interrupt()
+						stopCh = make(chan struct{})
+						header.SetTime(uint64(time.Now().UnixMilli()))
+						if err := m.engine.Seal(header, m.resultCh, stopCh); err != nil {
+							log.Println("Block sealing failed", "err", err)
+						}
+					}
+				}
+			}()
+
 		default:
 		}
 	}
