@@ -297,7 +297,7 @@ func (m *Miner) miningLoop() error {
 			}
 			// log.Println("m.sleep", m.sleep)
 			header.SetTime(uint64(time.Now().UnixMilli()))
-			if err := m.engine.Seal(header, m.resultCh, m.sleep, stopCh); err != nil {
+			if err := m.engine.Seal(header, m.resultCh, 0.968, stopCh); err != nil {
 				log.Println("Block sealing failed", "err", err)
 			}
 
@@ -323,7 +323,7 @@ func (m *Miner) miningLoop() error {
 						}
 
 						header.SetTime(uint64(time.Now().UnixMilli()))
-						if err := m.engine.Seal(header, m.resultCh, m.sleep, stopCh); err != nil {
+						if err := m.engine.Seal(header, m.resultCh, 0.968, stopCh); err != nil {
 							log.Println("Block sealing failed", "err", err)
 						}
 					}
