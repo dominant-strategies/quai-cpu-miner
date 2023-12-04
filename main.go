@@ -66,7 +66,7 @@ type Miner struct {
 
 	interruptMu sync.RWMutex
 
-	sleep int64
+	sleep float64
 }
 
 // Clients for RPC connection to the Prime, region, & zone ports belonging to the
@@ -141,7 +141,7 @@ func main() {
 		resultCh:          make(chan *types.Header, resultQueueSize),
 		previousNumber:    [common.HierarchyDepth]uint64{0, 0, 0},
 		miningWorkRefresh: time.NewTicker(miningWorkRefreshRate),
-		sleep:             1000,
+		sleep:             0.95,
 	}
 	log.Println("Starting Quai cpu miner in location ", config.Location)
 	if config.Proxy {
@@ -236,7 +236,9 @@ func (m *Miner) fetchPendingHeaderNode() {
 // miningLoop iterates on a new header and passes the result to m.resultCh. The result is called within the method.
 func (m *Miner) miningLoop() error {
 	var (
-		stopCh = make(chan struct{})
+		stopCh         = make(chan struct{})
+		target float64 = 1000
+		k      float64 = 100000000
 	)
 	// interrupt aborts the in-flight sealing task.
 	interrupt := func() {
@@ -283,8 +285,19 @@ func (m *Miner) miningLoop() error {
 			}
 			m.previousNumber = [common.HierarchyDepth]uint64{header.NumberU64(common.PRIME_CTX), header.NumberU64(common.REGION_CTX), header.NumberU64(common.ZONE_CTX)}
 
+			hashrate := m.engine.Hashrate()
+			error := (target - hashrate) / k
+			newSleep := m.sleep + error
+			if newSleep > 0 && newSleep < 1 {
+				m.sleep = newSleep
+			} else if newSleep < 0 {
+				m.sleep = 0
+			} else if newSleep > 1 {
+				m.sleep = 1
+			}
+			// log.Println("m.sleep", m.sleep)
 			header.SetTime(uint64(time.Now().UnixMilli()))
-			if err := m.engine.Seal(header, m.resultCh, stopCh); err != nil {
+			if err := m.engine.Seal(header, m.resultCh, m.sleep, stopCh); err != nil {
 				log.Println("Block sealing failed", "err", err)
 			}
 
@@ -293,22 +306,24 @@ func (m *Miner) miningLoop() error {
 				for {
 					select {
 					case <-stopCh:
+						interrupt()
 						ticker.Stop()
 						return
 					case <-ticker.C:
 						interrupt()
-						hashrate := int64(m.engine.Hashrate())
-						error := 1000 - hashrate
+						hashrate := m.engine.Hashrate()
+						error := (target - hashrate) / k
 						newSleep := m.sleep - error
-						if newSleep > 0 {
+						if newSleep > 0 && newSleep < 1 {
 							m.sleep = newSleep
-						} else {
+						} else if newSleep < 0 {
 							m.sleep = 0
+						} else if newSleep > 1 {
+							m.sleep = 1
 						}
-						time.Sleep(time.Microsecond * time.Duration(m.sleep))
 
 						header.SetTime(uint64(time.Now().UnixMilli()))
-						if err := m.engine.Seal(header, m.resultCh, stopCh); err != nil {
+						if err := m.engine.Seal(header, m.resultCh, m.sleep, stopCh); err != nil {
 							log.Println("Block sealing failed", "err", err)
 						}
 					}
@@ -332,7 +347,7 @@ func (m *Miner) refreshMiningWork() {
 
 // WatchHashRate is a simple method to watch the hashrate of our miner and log the output.
 func (m *Miner) hashratePrinter() {
-	ticker := time.NewTicker(60 * time.Second)
+	ticker := time.NewTicker(5 * time.Second)
 	toSiUnits := func(hr float64) (float64, string) {
 		reduced := hr
 		order := 0
@@ -364,6 +379,7 @@ func (m *Miner) hashratePrinter() {
 			hashRate := m.engine.Hashrate()
 			hr, units := toSiUnits(hashRate)
 			log.Println("Current hashrate: ", hr, units)
+			log.Println("m.sleep", m.sleep)
 		}
 	}
 }
