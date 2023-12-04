@@ -143,7 +143,7 @@ func main() {
 		resultCh:          make(chan *types.Header, resultQueueSize),
 		previousNumber:    [common.HierarchyDepth]uint64{0, 0, 0},
 		miningWorkRefresh: time.NewTicker(miningWorkRefreshRate),
-		sleep:             0.5,
+		sleep:             0.22,
 	}
 	log.Println("Starting Quai cpu miner in location ", config.Location)
 	if config.Proxy {
@@ -315,7 +315,7 @@ func (m *Miner) miningLoop() error {
 					case <-ticker.C:
 						interrupt()
 
-						if tickerCounter%5000 == 0 {
+						if tickerCounter%4000 == 0 {
 							m.ControlSleep()
 							tickerCounter = 0
 						} else {
@@ -336,7 +336,7 @@ func (m *Miner) miningLoop() error {
 
 func (m *Miner) ControlSleep() {
 	var target float64 = 1000
-	var k float64 = 1000000
+	var k float64 = 500000
 	hashrate := m.engine.Hashrate()
 	error := (target - hashrate) / k
 	newSleep := m.sleep - error
