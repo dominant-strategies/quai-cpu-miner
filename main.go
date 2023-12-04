@@ -66,6 +66,8 @@ type Miner struct {
 
 	interruptMu sync.RWMutex
 
+	wg sync.WaitGroup
+
 	sleep float64
 }
 
@@ -141,7 +143,7 @@ func main() {
 		resultCh:          make(chan *types.Header, resultQueueSize),
 		previousNumber:    [common.HierarchyDepth]uint64{0, 0, 0},
 		miningWorkRefresh: time.NewTicker(miningWorkRefreshRate),
-		sleep:             0.95,
+		sleep:             0.5,
 	}
 	log.Println("Starting Quai cpu miner in location ", config.Location)
 	if config.Proxy {
@@ -236,9 +238,8 @@ func (m *Miner) fetchPendingHeaderNode() {
 // miningLoop iterates on a new header and passes the result to m.resultCh. The result is called within the method.
 func (m *Miner) miningLoop() error {
 	var (
-		stopCh         = make(chan struct{})
-		target float64 = 1000
-		k      float64 = 100000000
+		stopCh   = make(chan struct{})
+		stopLoop = make(chan struct{})
 	)
 	// interrupt aborts the in-flight sealing task.
 	interrupt := func() {
@@ -248,6 +249,20 @@ func (m *Miner) miningLoop() error {
 			close(stopCh)
 			stopCh = nil
 			stopCh = make(chan struct{})
+		}
+	}
+	interruptMiningAndUpdate := func() {
+		m.interruptMu.Lock()
+		defer m.interruptMu.Unlock()
+		if stopCh != nil {
+			close(stopCh)
+			stopCh = nil
+			stopCh = make(chan struct{})
+		}
+		if stopLoop != nil {
+			close(stopLoop)
+			stopLoop = nil
+			stopLoop = make(chan struct{})
 		}
 	}
 
@@ -265,7 +280,7 @@ func (m *Miner) miningLoop() error {
 			// Mine the header here
 			// Return the valid header with proper nonce and mix digest
 			// Interrupt previous sealing operation
-			interrupt()
+			interruptMiningAndUpdate()
 			number := [common.HierarchyDepth]uint64{header.NumberU64(common.PRIME_CTX), header.NumberU64(common.REGION_CTX), header.NumberU64(common.ZONE_CTX)}
 			primeStr := fmt.Sprint(number[common.PRIME_CTX])
 			regionStr := fmt.Sprint(number[common.REGION_CTX])
@@ -285,45 +300,29 @@ func (m *Miner) miningLoop() error {
 			}
 			m.previousNumber = [common.HierarchyDepth]uint64{header.NumberU64(common.PRIME_CTX), header.NumberU64(common.REGION_CTX), header.NumberU64(common.ZONE_CTX)}
 
-			hashrate := m.engine.Hashrate()
-			error := (target - hashrate) / k
-			newSleep := m.sleep + error
-			if newSleep > 0 && newSleep < 1 {
-				m.sleep = newSleep
-			} else if newSleep < 0 {
-				m.sleep = 0
-			} else if newSleep > 1 {
-				m.sleep = 1
-			}
-			// log.Println("m.sleep", m.sleep)
-			header.SetTime(uint64(time.Now().UnixMilli()))
-			if err := m.engine.Seal(header, m.resultCh, 0.968, stopCh); err != nil {
-				log.Println("Block sealing failed", "err", err)
-			}
-
+			tickerCounter := 0
 			ticker := time.NewTicker(10 * time.Millisecond)
 			go func() {
+				header.SetTime(uint64(time.Now().UnixMilli()))
+				if err := m.engine.Seal(header, m.resultCh, m.sleep, stopCh); err != nil {
+					log.Println("Block sealing failed", "err", err)
+				}
 				for {
 					select {
-					case <-stopCh:
-						interrupt()
+					case <-stopLoop:
 						ticker.Stop()
 						return
 					case <-ticker.C:
 						interrupt()
-						hashrate := m.engine.Hashrate()
-						error := (target - hashrate) / k
-						newSleep := m.sleep - error
-						if newSleep > 0 && newSleep < 1 {
-							m.sleep = newSleep
-						} else if newSleep < 0 {
-							m.sleep = 0
-						} else if newSleep > 1 {
-							m.sleep = 1
-						}
 
+						if tickerCounter%5000 == 0 {
+							m.ControlSleep()
+							tickerCounter = 0
+						} else {
+							tickerCounter += 1
+						}
 						header.SetTime(uint64(time.Now().UnixMilli()))
-						if err := m.engine.Seal(header, m.resultCh, 0.968, stopCh); err != nil {
+						if err := m.engine.Seal(header, m.resultCh, m.sleep, stopCh); err != nil {
 							log.Println("Block sealing failed", "err", err)
 						}
 					}
@@ -332,6 +331,21 @@ func (m *Miner) miningLoop() error {
 
 		default:
 		}
+	}
+}
+
+func (m *Miner) ControlSleep() {
+	var target float64 = 1000
+	var k float64 = 1000000
+	hashrate := m.engine.Hashrate()
+	error := (target - hashrate) / k
+	newSleep := m.sleep - error
+	if newSleep > 0 && newSleep < 1 {
+		m.sleep = newSleep
+	} else if newSleep < 0 {
+		m.sleep = 0
+	} else if newSleep > 1 {
+		m.sleep = 1
 	}
 }
 
@@ -377,8 +391,8 @@ func (m *Miner) hashratePrinter() {
 		select {
 		case <-ticker.C:
 			hashRate := m.engine.Hashrate()
-			hr, units := toSiUnits(hashRate)
-			log.Println("Current hashrate: ", hr, units)
+			_, units := toSiUnits(hashRate)
+			log.Println("Current hashrate: ", hashRate, units)
 			log.Println("m.sleep", m.sleep)
 		}
 	}
