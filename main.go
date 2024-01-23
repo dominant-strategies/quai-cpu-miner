@@ -5,21 +5,24 @@ import (
 	"fmt"
 	"log"
 
+	"math/rand"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/INFURA/go-ethlibs/jsonrpc"
 	"github.com/dominant-strategies/go-quai/consensus"
+	"github.com/dominant-strategies/go-quai/quaiclient"
+	"github.com/sirupsen/logrus"
 
 	"github.com/TwiN/go-color"
 	"github.com/dominant-strategies/go-quai/common"
 	"github.com/dominant-strategies/go-quai/consensus/blake3pow"
 	"github.com/dominant-strategies/go-quai/consensus/progpow"
 	"github.com/dominant-strategies/go-quai/core/types"
-	"github.com/dominant-strategies/go-quai/quaiclient/ethclient"
 
 	"github.com/dominant-strategies/quai-cpu-miner/util"
+	lru "github.com/hnlq715/golang-lru"
 )
 
 const (
@@ -63,11 +66,13 @@ type Miner struct {
 
 	// Tracks the latest JSON RPC ID to send to the proxy or node.
 	latestId uint64
+
+	miningCache *lru.Cache
 }
 
 // Clients for RPC connection to the Prime, region, & zone ports belonging to the
 // slice we are actively mining
-type SliceClients [common.HierarchyDepth]*ethclient.Client
+type SliceClients [common.HierarchyDepth]*quaiclient.Client
 
 // Creates a MinerSession object that is connected to the single proxy node.
 func connectToProxy(config util.Config) *util.MinerSession {
@@ -89,7 +94,7 @@ func connectToProxy(config util.Config) *util.MinerSession {
 
 // connectToSlice takes in a config and retrieves the Prime, Region, and Zone client
 // that is used for mining in a slice.
-func connectToSlice(config util.Config) SliceClients {
+func connectToSlice(config util.Config, logger *logrus.Logger) SliceClients {
 	var err error
 	loc := config.Location
 	clients := SliceClients{}
@@ -98,7 +103,7 @@ func connectToSlice(config util.Config) SliceClients {
 	zoneConnected := false
 	for !primeConnected || !regionConnected || !zoneConnected {
 		if config.PrimeURL != "" && !primeConnected {
-			clients[common.PRIME_CTX], err = ethclient.Dial(config.PrimeURL)
+			clients[common.PRIME_CTX], err = quaiclient.Dial(config.PrimeURL, logger)
 			if err != nil {
 				log.Println("Unable to connect to node:", "Prime", config.PrimeURL)
 			} else {
@@ -106,7 +111,7 @@ func connectToSlice(config util.Config) SliceClients {
 			}
 		}
 		if config.RegionURLs[loc.Region()] != "" && !regionConnected {
-			clients[common.REGION_CTX], err = ethclient.Dial(config.RegionURLs[loc.Region()])
+			clients[common.REGION_CTX], err = quaiclient.Dial(config.RegionURLs[loc.Region()], logger)
 			if err != nil {
 				log.Println("Unable to connect to node:", "Region", config.RegionURLs[loc.Region()])
 			} else {
@@ -114,7 +119,7 @@ func connectToSlice(config util.Config) SliceClients {
 			}
 		}
 		if config.ZoneURLs[loc.Region()][loc.Zone()] != "" && !zoneConnected {
-			clients[common.ZONE_CTX], err = ethclient.Dial(config.ZoneURLs[loc.Region()][loc.Zone()])
+			clients[common.ZONE_CTX], err = quaiclient.Dial(config.ZoneURLs[loc.Region()][loc.Zone()], logger)
 			if err != nil {
 				log.Println("Unable to connect to node:", "Zone", config.ZoneURLs[loc.Region()][loc.Zone()])
 			} else {
@@ -144,12 +149,14 @@ func main() {
 		config.Location = common.Location{byte(region), byte(zone)}
 	}
 	var engine consensus.Engine
+	logger := logrus.New()
 
 	if config.RunBlake3 {
-		engine = blake3pow.New(blake3pow.Config{NotifyFull: true}, nil, false)
+		engine = blake3pow.New(blake3pow.Config{NotifyFull: true, NodeLocation: common.Location{0, 0}}, nil, false, logger)
 	} else {
-		engine = progpow.New(progpow.Config{NotifyFull: true}, nil, false)
+		engine = progpow.New(progpow.Config{NotifyFull: true, NodeLocation: common.Location{0, 0}}, nil, false, logger)
 	}
+	miningCache, _ := lru.New(2)
 
 	m := &Miner{
 		config:            config,
@@ -159,6 +166,7 @@ func main() {
 		resultCh:          make(chan *types.Header, resultQueueSize),
 		previousNumber:    [common.HierarchyDepth]uint64{0, 0, 0},
 		miningWorkRefresh: time.NewTicker(miningWorkRefreshRate),
+		miningCache:       miningCache,
 	}
 	log.Println("Starting Quai cpu miner in location ", config.Location)
 	if config.Proxy {
@@ -167,14 +175,13 @@ func main() {
 		go m.startProxyListener()
 		go m.subscribeProxy()
 	} else {
-		m.sliceClients = connectToSlice(config)
+		m.sliceClients = connectToSlice(config, logger)
 		go m.fetchPendingHeaderNode()
 		// No separate call needed to start listeners.
 		go m.subscribeNode()
 	}
 	go m.resultLoop()
 	go m.miningLoop()
-	go m.hashratePrinter()
 	go m.refreshMiningWork()
 	defer m.miningWorkRefresh.Stop()
 	<-exit
@@ -267,11 +274,22 @@ func (m *Miner) miningLoop() error {
 		select {
 		case newHead := <-m.updateCh:
 
-			if header != nil && newHead.SealHash() == header.SealHash() {
+			if header != nil {
 				continue
 			}
 
 			header := newHead
+
+			m.miningCache.ContainsOrAdd(header.SealHash(), header)
+
+			keys := m.miningCache.Keys()
+			if len(keys) > 0 {
+				value, exists := m.miningCache.Get(keys[rand.Intn(len(keys))])
+				if exists {
+					header = value.(*types.Header)
+				}
+			}
+
 			m.miningWorkRefresh.Reset(miningWorkRefreshRate)
 			// Mine the header here
 			// Return the valid header with proper nonce and mix digest
@@ -311,44 +329,6 @@ func (m *Miner) refreshMiningWork() {
 		select {
 		case <-m.miningWorkRefresh.C:
 			m.fetchPendingHeaderNode()
-		}
-	}
-}
-
-// WatchHashRate is a simple method to watch the hashrate of our miner and log the output.
-func (m *Miner) hashratePrinter() {
-	ticker := time.NewTicker(60 * time.Second)
-	toSiUnits := func(hr float64) (float64, string) {
-		reduced := hr
-		order := 0
-		for {
-			if reduced >= 1000 {
-				reduced /= 1000
-				order += 3
-			} else {
-				break
-			}
-		}
-		switch order {
-		case 3:
-			return reduced, "Kh/s"
-		case 6:
-			return reduced, "Mh/s"
-		case 9:
-			return reduced, "Gh/s"
-		case 12:
-			return reduced, "Th/s"
-		default:
-			// If reduction didn't work, just return the original
-			return hr, "h/s"
-		}
-	}
-	for {
-		select {
-		case <-ticker.C:
-			hashRate := m.engine.Hashrate()
-			hr, units := toSiUnits(hashRate)
-			log.Println("Current hashrate: ", hr, units)
 		}
 	}
 }
