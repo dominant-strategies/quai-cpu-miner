@@ -4,13 +4,13 @@ go 1.21.1
 
 toolchain go1.21.5
 
-replace github.com/dominant-strategies/go-quai => ../go-quai-libp2p
+replace github.com/dominant-strategies/go-quai => ../go-quai
 
 require (
-	github.com/INFURA/go-ethlibs v0.0.0-20230210163729-fc6ca4235802
+	github.com/INFURA/go-ethlibs v0.0.0-20230222175239-ea21e114f25c
 	github.com/TwiN/go-color v1.4.0
 	github.com/dominant-strategies/go-quai v0.19.0
-	github.com/dominant-strategies/go-quai-stratum v0.1.1-0.20230411175350-8a5f55caee55
+	github.com/dominant-strategies/go-quai-stratum v0.3.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.17.0
 )
@@ -20,7 +20,8 @@ require (
 	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/btcsuite/btcd v0.20.1-beta // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
+	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cockroachdb/errors v1.9.1 // indirect
@@ -28,6 +29,7 @@ require (
 	github.com/cockroachdb/pebble v1.0.0 // indirect
 	github.com/cockroachdb/redact v1.1.3 // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
+	github.com/decred/dcrd/crypto/blake256 v1.0.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/dominant-strategies/bn256 v0.0.0-20220930122411-fbf930a7493d // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
