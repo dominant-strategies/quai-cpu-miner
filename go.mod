@@ -4,12 +4,10 @@ go 1.21.1
 
 toolchain go1.21.5
 
-replace github.com/dominant-strategies/go-quai => ../go-quai
-
 require (
 	github.com/INFURA/go-ethlibs v0.0.0-20230222175239-ea21e114f25c
 	github.com/TwiN/go-color v1.4.0
-	github.com/dominant-strategies/go-quai v0.19.0
+	github.com/dominant-strategies/go-quai v0.13.0-pre.0.0.20240415183747-0b41b630d28e
 	github.com/dominant-strategies/go-quai-stratum v0.3.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.17.0
@@ -72,6 +70,7 @@ require (
 	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
+	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/prometheus/client_golang v1.16.0 // indirect
@@ -83,6 +82,7 @@ require (
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/sagikazarmark/locafero v0.3.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
+	github.com/sasha-s/go-deadlock v0.3.1 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.12 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
@@ -99,7 +99,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
