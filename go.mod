@@ -4,7 +4,7 @@ go 1.21.1
 
 toolchain go1.21.5
 
-replace github.com/dominant-strategies/go-quai => ../go-quai
+replace github.com/dominant-strategies/go-quai => ../go-quai-libp2p
 
 require (
 	github.com/INFURA/go-ethlibs v0.0.0-20230222175239-ea21e114f25c
