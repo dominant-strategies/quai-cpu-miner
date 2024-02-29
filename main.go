@@ -14,10 +14,8 @@ import (
 	"github.com/dominant-strategies/go-quai/quaiclient"
 	"github.com/sirupsen/logrus"
 
-	"github.com/TwiN/go-color"
 	"github.com/dominant-strategies/go-quai/common"
 	"github.com/dominant-strategies/go-quai/consensus/blake3pow"
-	"github.com/dominant-strategies/go-quai/consensus/progpow"
 	"github.com/dominant-strategies/go-quai/core/types"
 
 	"github.com/dominant-strategies/quai-cpu-miner/util"
@@ -52,10 +50,10 @@ type Miner struct {
 	sliceClients SliceClients
 
 	// Channel to receive header updates
-	updateCh chan *types.Header
+	updateCh chan *types.WorkObjectHeader
 
 	// Channel to submit completed work
-	resultCh chan *types.Header
+	resultCh chan *types.WorkObjectHeader
 
 	// Track previous block number for pretty printing
 	previousNumber [common.HierarchyDepth]uint64
@@ -149,16 +147,14 @@ func main() {
 
 	if config.RunBlake3 {
 		engine = blake3pow.New(blake3pow.Config{NotifyFull: true, NodeLocation: common.Location{0, 0}}, nil, false, logger)
-	} else {
-		engine = progpow.New(progpow.Config{NotifyFull: true, NodeLocation: common.Location{0, 0}}, nil, false, logger)
 	}
 
 	m := &Miner{
 		config:            config,
 		engine:            engine,
 		header:            types.EmptyHeader(),
-		updateCh:          make(chan *types.Header, resultQueueSize),
-		resultCh:          make(chan *types.Header, resultQueueSize),
+		updateCh:          make(chan *types.WorkObjectHeader, resultQueueSize),
+		resultCh:          make(chan *types.WorkObjectHeader, resultQueueSize),
 		previousNumber:    [common.HierarchyDepth]uint64{0, 0, 0},
 		miningWorkRefresh: time.NewTicker(miningWorkRefreshRate),
 	}
@@ -166,7 +162,6 @@ func main() {
 	if config.Proxy {
 		m.proxyClient = connectToProxy(config)
 		go m.fetchPendingHeaderProxy()
-		go m.startProxyListener()
 		go m.subscribeProxy()
 	} else {
 		m.sliceClients = connectToSlice(config, logger)
@@ -195,15 +190,11 @@ func (m *Miner) subscribeProxy() error {
 	return m.proxyClient.SendTCPRequest(*msg)
 }
 
-func (m *Miner) startProxyListener() {
-	m.proxyClient.ListenTCP(m.updateCh)
-}
-
 // Subscribes to the zone node in order to get pending header updates.
 func (m *Miner) subscribeNode() {
-	if _, err := m.sliceClients[common.ZONE_CTX].SubscribePendingHeader(context.Background(), m.updateCh); err != nil {
-		log.Fatal("Failed to subscribe to pending header events", err)
-	}
+	// if _, err := m.sliceClients[common.ZONE_CTX].SubscribePendingHeader(context.Background(), m.updateCh); err != nil {
+	// 	log.Fatal("Failed to subscribe to pending header events", err)
+	// }
 }
 
 // Gets the latest pending header from the proxy.
@@ -279,25 +270,7 @@ func (m *Miner) miningLoop() error {
 			// Interrupt previous sealing operation
 			interrupt()
 			stopCh = make(chan struct{})
-			number := [common.HierarchyDepth]uint64{header.NumberU64(common.PRIME_CTX), header.NumberU64(common.REGION_CTX), header.NumberU64(common.ZONE_CTX)}
-			primeStr := fmt.Sprint(number[common.PRIME_CTX])
-			regionStr := fmt.Sprint(number[common.REGION_CTX])
-			zoneStr := fmt.Sprint(number[common.ZONE_CTX])
-			if number != m.previousNumber {
-				if number[common.PRIME_CTX] != m.previousNumber[common.PRIME_CTX] {
-					primeStr = color.Ize(color.Red, primeStr)
-					regionStr = color.Ize(color.Red, regionStr)
-					zoneStr = color.Ize(color.Red, zoneStr)
-				} else if number[common.REGION_CTX] != m.previousNumber[common.REGION_CTX] {
-					regionStr = color.Ize(color.Yellow, regionStr)
-					zoneStr = color.Ize(color.Yellow, zoneStr)
-				} else if number[common.ZONE_CTX] != m.previousNumber[common.ZONE_CTX] {
-					zoneStr = color.Ize(color.Blue, zoneStr)
-				}
-				log.Println("Mining Block: ", fmt.Sprintf("[%s %s %s]", primeStr, regionStr, zoneStr), "location", header.Location(), "difficulty", header.Difficulty())
-			}
-			m.previousNumber = [common.HierarchyDepth]uint64{header.NumberU64(common.PRIME_CTX), header.NumberU64(common.REGION_CTX), header.NumberU64(common.ZONE_CTX)}
-			header.SetTime(uint64(time.Now().Unix()))
+			log.Println("Mining Block: ", "location", header.Location(), "difficulty", header.Difficulty())
 			if err := m.engine.Seal(header, m.resultCh, stopCh); err != nil {
 				log.Println("Block sealing failed", "err", err)
 			}
@@ -321,18 +294,14 @@ func (m *Miner) resultLoop() {
 	for {
 		select {
 		case header := <-m.resultCh:
-			_, order, err := m.engine.CalcOrder(header)
-			if err != nil {
-				log.Println("Mined block had invalid order: err=", err)
-				return
-			}
+			order := 2
 			switch order {
 			case common.PRIME_CTX:
-				log.Println(color.Ize(color.Red, "PRIME block : "), header.NumberArray(), header.Hash())
+				log.Println(header.Number(), header.Hash())
 			case common.REGION_CTX:
-				log.Println(color.Ize(color.Yellow, "REGION block: "), header.NumberArray(), header.Hash())
+				log.Println(header.Number(), header.Hash())
 			case common.ZONE_CTX:
-				log.Println(color.Ize(color.Blue, "ZONE block  : "), header.NumberArray(), header.Hash())
+				log.Println(header.Number(), header.Hash())
 			}
 			if !m.config.Proxy {
 				for i := common.HierarchyDepth - 1; i >= order; i-- {
@@ -343,42 +312,13 @@ func (m *Miner) resultLoop() {
 						continue
 					}
 				}
-			} else {
-				// Proxy miner only needs to send to the proxy (stored at zone context).
-				go m.sendMinedHeaderProxy(header)
 			}
 		}
 	}
-}
-
-// Sends the mined header to the proxy.
-func (m *Miner) sendMinedHeaderProxy(header *types.Header) error {
-	retryDelay := 1 // Start retry at 1 second
-	for {
-		header_req, err := jsonrpc.MakeRequest(int(m.incrementLatestID()), "quai_receiveMinedHeader", header.RPCMarshalHeader())
-		if err != nil {
-			log.Fatalf("Could not create json message with header: %v", err)
-			return err
-		}
-
-		err = m.proxyClient.SendTCPRequest(*header_req)
-		if err != nil {
-			log.Printf("Unable to send pending header to node: %v", err)
-			time.Sleep(time.Duration(retryDelay) * time.Second)
-			retryDelay *= 2
-			if retryDelay > maxRetryDelay {
-				retryDelay = maxRetryDelay
-			}
-		} else {
-			break
-		}
-		log.Println("Sent mined header")
-	}
-	return nil
 }
 
 // Sends the mined header to its mining client.
-func (m *Miner) sendMinedHeaderNodes(order int, header *types.Header) error {
+func (m *Miner) sendMinedHeaderNodes(order int, header *types.WorkObjectHeader) error {
 	return m.sliceClients[order].ReceiveMinedHeader(context.Background(), header)
 }
 
