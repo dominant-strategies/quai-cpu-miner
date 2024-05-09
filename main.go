@@ -148,9 +148,9 @@ func main() {
 	logger := logrus.New()
 
 	if config.RunBlake3 {
-		engine = blake3pow.New(blake3pow.Config{NotifyFull: true, NodeLocation: common.Location{0, 0}}, nil, false, logger)
+		engine = blake3pow.New(blake3pow.Config{NotifyFull: true, NodeLocation: common.Location{0, 0}, NumThreads: 2}, nil, false, logger)
 	} else {
-		engine = progpow.New(progpow.Config{NotifyFull: true, NodeLocation: common.Location{0, 0}}, nil, false, logger)
+		engine = progpow.New(progpow.Config{NotifyFull: true, NodeLocation: common.Location{0, 0}, NumThreads: 2}, nil, false, logger)
 	}
 
 	m := &Miner{
