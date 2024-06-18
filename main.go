@@ -15,6 +15,7 @@ import (
 	"github.com/dominant-strategies/go-quai/consensus"
 	"github.com/dominant-strategies/go-quai/quaiclient"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/dominant-strategies/go-quai/common"
 	"github.com/dominant-strategies/go-quai/consensus/blake3pow"
@@ -29,7 +30,7 @@ const (
 	resultQueueSize       = 10
 	maxRetryDelay         = 60 * 60 * 4 // 4 hours
 	USER_AGENT_VER        = "0.1"
-	miningWorkRefreshRate = 2 * time.Second
+	miningWorkRefreshRate = 10000 * time.Second
 )
 
 var (
@@ -53,6 +54,9 @@ type Miner struct {
 
 	// RPC client connections to the Quai nodes
 	sliceClients SliceClients
+
+	// woCh receives the pending header from the subscription
+	woCh chan []byte
 
 	// Channel to receive header updates
 	updateCh chan *types.WorkObject
@@ -161,6 +165,7 @@ func main() {
 	m := &Miner{
 		config:            config,
 		engine:            engine,
+		woCh:              make(chan []byte, resultQueueSize),
 		updateCh:          make(chan *types.WorkObject, resultQueueSize),
 		resultCh:          make(chan *types.WorkObject, resultQueueSize),
 		previousNumber:    [common.HierarchyDepth]uint64{0, 0, 0},
@@ -176,6 +181,7 @@ func main() {
 		go m.fetchPendingHeaderNode()
 		// No separate call needed to start listeners.
 		go m.subscribeNode()
+		go m.listenNewPendingHeader()
 	}
 	go m.resultLoop()
 	go m.miningLoop()
@@ -200,7 +206,7 @@ func (m *Miner) subscribeProxy() error {
 
 // Subscribes to the zone node in order to get pending header updates.
 func (m *Miner) subscribeNode() {
-	if _, err := m.sliceClients[common.ZONE_CTX].SubscribePendingHeader(context.Background(), m.updateCh); err != nil {
+	if _, err := m.sliceClients[common.ZONE_CTX].SubscribePendingHeader(context.Background(), m.woCh); err != nil {
 		log.Fatal("Failed to subscribe to pending header events", err)
 	}
 }
@@ -246,6 +252,30 @@ func (m *Miner) fetchPendingHeaderNode() {
 		} else {
 			m.updateCh <- header
 			break
+		}
+	}
+}
+
+func (m *Miner) listenNewPendingHeader() {
+	for {
+		select {
+		case newPh := <-m.woCh:
+			if len(newPh) > 0 {
+				protoWo := &types.ProtoWorkObject{}
+				err := proto.Unmarshal(newPh, protoWo)
+				if err != nil {
+					log.Println("Error unmarshalling new pending header", "err", err)
+					continue
+				}
+				wo := &types.WorkObject{}
+				err = wo.ProtoDecode(protoWo, m.config.Location, types.PEtxObject)
+				if err != nil {
+					log.Println("Error decoding new pending header", "err", err)
+					continue
+				}
+				m.updateCh <- wo
+			}
+		default:
 		}
 	}
 }
