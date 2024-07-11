@@ -113,6 +113,8 @@ github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2/go.mod h1:SqUrOPUn
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=
 github.com/dominant-strategies/bn256 v0.0.0-20220930122411-fbf930a7493d h1:hkL13khTTS48QfWmjRFWpuzhOqu6S0cjpJOzPoBEDb4=
 github.com/dominant-strategies/bn256 v0.0.0-20220930122411-fbf930a7493d/go.mod h1:nvtPJPChairu4o4iX2XGrstOFpLaAgNYhrUCl5bSng4=
+github.com/dominant-strategies/go-quai v0.30.0 h1:XQMz5UbFtv6epUr1EXKJRw1aL07NoS0Blkltf8bathc=
+github.com/dominant-strategies/go-quai v0.30.0/go.mod h1:r47V9UUKRZ0VOXm0Kth3xO1aYSBFM/qAFOr+zR2zBAA=
 github.com/dominant-strategies/go-quai-stratum v0.3.0 h1:MPGujICiLY4/4JZ1gAWXvv09/NWgwstEGQagPIHbpP8=
 github.com/dominant-strategies/go-quai-stratum v0.3.0/go.mod h1:i9tQ+G1ON5FB/f0ZFBjdH0YnkynCoyijQ0pU7+ucGGo=
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
