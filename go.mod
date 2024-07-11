@@ -7,11 +7,11 @@ toolchain go1.21.5
 require (
 	github.com/INFURA/go-ethlibs v0.0.0-20230222175239-ea21e114f25c
 	github.com/TwiN/go-color v1.4.0
-	github.com/dominant-strategies/go-quai v0.29.1-0.20240524201502-51123399727b
+	github.com/dominant-strategies/go-quai v0.30.0
 	github.com/dominant-strategies/go-quai-stratum v0.3.0
-	github.com/gogo/protobuf v1.3.2
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.17.0
+	google.golang.org/protobuf v1.31.0
 )
 
 require (
@@ -33,6 +33,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/getsentry/sentry-go v0.18.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
@@ -95,7 +96,6 @@ require (
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.2.1 // indirect
