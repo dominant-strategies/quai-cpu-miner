@@ -1,0 +1,6 @@
+# Connection details for solo mining
+Location: [0,0]
+PrimeURL: "ws://host-go-quai:8001"
+RegionURLs: ["ws://host-go-quai:8002", "ws://host-go-quai:8003", "ws://host-go-quai:8004"]
+ZoneURLs: [["ws://host-go-quai:8200", "ws://host-go-quai:8201", "ws://host-go-quai:8202"], ["ws://host-go-quai:8220", "ws://host-go-quai:8221", "ws://host-go-quai:8222"], ["ws://host-go-quai:8240", "ws://host-go-quai:8241", "ws://host-go-quai:8242"] ]
+RunBlake3: True

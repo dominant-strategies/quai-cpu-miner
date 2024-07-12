@@ -1,17 +1,41 @@
-FROM golang:1.19-alpine as builder
-RUN apk add --no-cache gcc musl-dev linux-headers git
+# First stage: build the Go binary
+FROM golang:1.21-alpine AS builder
 
-ADD . /quai-cpu-miner
+# Install make and other build dependencies
+RUN apk --no-cache add make gcc musl-dev
+# Set the Current Working Directory inside the container
+WORKDIR /app
 
-WORKDIR /quai-cpu-miner
+# Copy go mod and sum files
+COPY go.mod go.sum ./
 
-RUN env GO111MODULE=on go build -o ./build/bin/quai-cpu-miner main.go
+# Download all dependencies
+RUN go mod download
 
-# Stage 2
-FROM golang:1.19-alpine
+# Copy the source code
+COPY . .
 
-COPY --from=builder /quai-cpu-miner/build/bin ./build/bin
+# Build the Go app using the Makefile
+RUN make quai-cpu-miner
 
-WORKDIR ./
+# Second stage: create a smaller runtime image
+FROM alpine:latest
 
-CMD ./build/bin/quai-cpu-miner $REGION $ZONE 1
+# Install any dependencies required to run the application
+RUN apk --no-cache add ca-certificates cpulimit
+
+
+# Set the Current Working Directory inside the container
+WORKDIR /root/
+
+# Copy the binary from the builder stage
+COPY --from=builder /app/build/bin/quai-cpu-miner ./build/bin/quai-cpu-miner
+COPY --from=builder /app/VERSION ./VERSION
+RUN mkdir ./config
+
+
+# Ensure the binary has execute permissions
+RUN chmod +x ./build/bin/quai-cpu-miner
+
+# Command to run the executable
+CMD ["cpulimit", "--limit", "2", "./build/bin/quai-cpu-miner"]
