@@ -361,7 +361,7 @@ func (m *Miner) resultLoop() {
 				m.sliceClients[common.ZONE_CTX].ReceiveWorkShare(context.Background(), header.WorkObjectHeader())
 				continue
 			}
-			_, order, err := m.engine.CalcOrder(header)
+			order, err := m.sliceClients[common.ZONE_CTX].CalcOrder(context.Background(), header)
 			if err != nil {
 				log.Println("Error calculating order: ", err)
 				continue

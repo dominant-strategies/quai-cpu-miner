@@ -7,7 +7,7 @@ toolchain go1.21.5
 require (
 	github.com/INFURA/go-ethlibs v0.0.0-20230222175239-ea21e114f25c
 	github.com/TwiN/go-color v1.4.0
-	github.com/dominant-strategies/go-quai v0.30.0
+	github.com/dominant-strategies/go-quai v0.30.1-0.20240805183503-759921b5be8a
 	github.com/dominant-strategies/go-quai-stratum v0.3.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.17.0
@@ -17,6 +17,7 @@ require (
 require (
 	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
+	github.com/benbjohnson/clock v1.3.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
@@ -49,6 +50,7 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/ledgerwatch/secp256k1 v1.0.0 // indirect
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
+	github.com/libp2p/go-flow-metrics v0.1.0 // indirect
 	github.com/libp2p/go-libp2p v0.32.1 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
