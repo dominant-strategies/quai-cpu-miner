@@ -16,6 +16,7 @@ type Config struct {
 	ZoneURLs      [][]string
 	Location      common.Location
 	RunBlake3     bool
+	MineOne       bool
 }
 
 // LoadConfig reads configuration from file or environment variables.

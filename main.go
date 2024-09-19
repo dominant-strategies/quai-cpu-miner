@@ -359,6 +359,9 @@ func (m *Miner) resultLoop() {
 					log.Println("Block sealing failed", "err", err)
 				}
 				m.sliceClients[common.ZONE_CTX].ReceiveWorkShare(context.Background(), header.WorkObjectHeader())
+				if m.config.MineOne {
+					return
+				}
 				continue
 			}
 			order, err := m.sliceClients[common.ZONE_CTX].CalcOrder(context.Background(), header)
@@ -383,6 +386,9 @@ func (m *Miner) resultLoop() {
 						continue
 					}
 				}
+			}
+			if m.config.MineOne && (order == common.ZONE_CTX || order == common.REGION_CTX) || order == common.PRIME_CTX {
+				return
 			}
 		}
 	}
