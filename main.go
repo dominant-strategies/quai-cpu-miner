@@ -13,6 +13,7 @@ import (
 	"github.com/INFURA/go-ethlibs/jsonrpc"
 	"github.com/TwiN/go-color"
 	"github.com/dominant-strategies/go-quai/consensus"
+	"github.com/dominant-strategies/go-quai/params"
 	"github.com/dominant-strategies/go-quai/quaiclient"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
@@ -345,43 +346,54 @@ func (m *Miner) resultLoop() {
 		select {
 		case header := <-m.resultCh:
 			// check if the mined object is a workshare or a block
-			target := new(big.Int).Div(big2e256, header.Difficulty())
+			workShareTarget, err := consensus.CalcWorkShareThreshold(header.WorkObjectHeader(), params.WorkSharesThresholdDiff)
+			if err != nil {
+				log.Println("Err computing the work share target: ", err)
+				continue
+			}
 			powHash, err := m.engine.ComputePowHash(header.WorkObjectHeader())
 			if err != nil {
 				log.Println("Error computing pow hash: ", err)
 				continue
 			}
-			if new(big.Int).SetBytes(powHash.Bytes()).Cmp(target) > 0 {
-				log.Println("Mined a work share", header.Hash())
-				// Restart the Mining work
-				m.stopCh = make(chan struct{})
-				if err := m.engine.Seal(m.header, m.resultCh, m.stopCh); err != nil {
-					log.Println("Block sealing failed", "err", err)
-				}
-				m.sliceClients[common.ZONE_CTX].ReceiveWorkShare(context.Background(), header.WorkObjectHeader())
-				continue
-			}
-			order, err := m.sliceClients[common.ZONE_CTX].CalcOrder(context.Background(), header)
-			if err != nil {
-				log.Println("Error calculating order: ", err)
-				continue
-			}
-			switch order {
-			case common.PRIME_CTX:
-				log.Println(color.Ize(color.Red, "PRIME block : "), header.NumberArray(), header.Hash())
-			case common.REGION_CTX:
-				log.Println(color.Ize(color.Yellow, "REGION block: "), header.NumberArray(), header.Hash())
-			case common.ZONE_CTX:
-				log.Println(color.Ize(color.Blue, "ZONE block  : "), header.NumberArray(), header.Hash())
-			}
-			if !m.config.Proxy {
-				for i := common.HierarchyDepth - 1; i >= order; i-- {
-					err := m.sendMinedHeaderNodes(i, header)
+			powHashBigInt := new(big.Int).SetBytes(powHash.Bytes())
+
+			// Check if satisfies workShareTarget
+			if powHashBigInt.Cmp(workShareTarget) < 0 {
+				// Check if also satisfies block target
+				if powHashBigInt.Cmp(consensus.DifficultyToTarget(header.Difficulty())) < 0 {
+					order, err := m.sliceClients[common.ZONE_CTX].CalcOrder(context.Background(), header)
 					if err != nil {
-						// Go back to waiting on the next block.
-						fmt.Errorf("error submitting block to context %d: %v", order, err)
+						log.Println("Error calculating order: ", err)
 						continue
 					}
+					switch order {
+					case common.PRIME_CTX:
+						log.Println(color.Ize(color.Red, "PRIME block : "), header.NumberArray(), header.Hash())
+					case common.REGION_CTX:
+						log.Println(color.Ize(color.Yellow, "REGION block: "), header.NumberArray(), header.Hash())
+					case common.ZONE_CTX:
+						log.Println(color.Ize(color.Blue, "ZONE block  : "), header.NumberArray(), header.Hash())
+					}
+					if !m.config.Proxy {
+						for i := common.HierarchyDepth - 1; i >= order; i-- {
+							err := m.sendMinedHeaderNodes(i, header)
+							if err != nil {
+								// Go back to waiting on the next block.
+								fmt.Errorf("error submitting block to context %d: %v", order, err)
+								continue
+							}
+						}
+					}
+				} else {
+					log.Println("Mined a work share", header.Hash())
+					// Restart the Mining work
+					m.stopCh = make(chan struct{})
+					if err := m.engine.Seal(m.header, m.resultCh, m.stopCh); err != nil {
+						log.Println("Block sealing failed", "err", err)
+					}
+					m.sliceClients[common.ZONE_CTX].ReceiveWorkShare(context.Background(), header.WorkObjectHeader())
+					continue
 				}
 			}
 		}
