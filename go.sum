@@ -124,8 +124,8 @@ github.com/docker/go-units v0.5.0 h1:69rxXcBk27SvSaaxTtLh/8llcHD8vYHT7WSdRZ/jvr4
 github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
 github.com/dominant-strategies/bn256 v0.0.0-20220930122411-fbf930a7493d h1:hkL13khTTS48QfWmjRFWpuzhOqu6S0cjpJOzPoBEDb4=
 github.com/dominant-strategies/bn256 v0.0.0-20220930122411-fbf930a7493d/go.mod h1:nvtPJPChairu4o4iX2XGrstOFpLaAgNYhrUCl5bSng4=
-github.com/dominant-strategies/go-quai v0.32.0 h1:eEBxwEUj8ltbEavJw06yLafpzWqBPf99q8nqfXCRg4E=
-github.com/dominant-strategies/go-quai v0.32.0/go.mod h1:3Bcntxf3W2x+aeaP3IVVp9/oSkF1jxjFvg2sgibRXsg=
+github.com/dominant-strategies/go-quai v0.33.1-0.20241002163101-901344291c84 h1:mqu+RuWs6u0H+7+zIZTYWak7ZgmVYM05bmogCSZtdjg=
+github.com/dominant-strategies/go-quai v0.33.1-0.20241002163101-901344291c84/go.mod h1:awcmVOJg0w2bWkSP3JKeFotVnb1JxiXFCME6dRqUOgk=
 github.com/dominant-strategies/go-quai-stratum v0.3.0 h1:MPGujICiLY4/4JZ1gAWXvv09/NWgwstEGQagPIHbpP8=
 github.com/dominant-strategies/go-quai-stratum v0.3.0/go.mod h1:i9tQ+G1ON5FB/f0ZFBjdH0YnkynCoyijQ0pU7+ucGGo=
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
