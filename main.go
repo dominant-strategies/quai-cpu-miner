@@ -90,6 +90,7 @@ func connectToProxy(config util.Config) *util.MinerSession {
 			client, err = util.NewMinerConn(config.ProxyURL)
 			if err != nil {
 				log.Println("Unable to connect to proxy: ", config.ProxyURL)
+				time.Sleep(1 * time.Second)
 			} else {
 				proxyConnected = true
 			}
