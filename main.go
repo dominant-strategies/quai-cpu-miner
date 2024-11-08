@@ -346,7 +346,13 @@ func (m *Miner) resultLoop() {
 		select {
 		case header := <-m.resultCh:
 			// check if the mined object is a workshare or a block
-			workShareTarget, err := consensus.CalcWorkShareThreshold(header.WorkObjectHeader(), params.WorkSharesThresholdDiff)
+			var thresholdDiff int
+			if header.NumberU64(common.ZONE_CTX) < params.GoldenAgeForkNumberV2 {
+				thresholdDiff = params.OldWorkSharesThresholdDiff
+			} else {
+				thresholdDiff = params.NewWorkSharesThresholdDiff
+			}
+			workShareTarget, err := consensus.CalcWorkShareThreshold(header.WorkObjectHeader(), thresholdDiff)
 			if err != nil {
 				log.Println("Err computing the work share target: ", err)
 				continue
