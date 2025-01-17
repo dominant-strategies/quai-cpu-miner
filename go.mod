@@ -1,6 +1,6 @@
 module github.com/dominant-strategies/quai-cpu-miner
 
-go 1.23.1
+go 1.23.2
 
 toolchain go1.23.4
 
@@ -32,7 +32,7 @@ require (
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.0.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
-	github.com/dominant-strategies/bn256 v0.0.0-20220930122411-fbf930a7493d // indirect
+	github.com/dominant-strategies/bn256 v0.0.0-20250117181620-a3c0ff77c445 // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/getsentry/sentry-go v0.18.0 // indirect
@@ -111,7 +111,7 @@ require (
 	golang.org/x/crypto v0.18.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/image v0.11.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gonum.org/v1/plot v0.14.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
