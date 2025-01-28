@@ -7,7 +7,7 @@ toolchain go1.23.4
 require (
 	github.com/INFURA/go-ethlibs v0.0.0-20230222175239-ea21e114f25c
 	github.com/TwiN/go-color v1.4.0
-	github.com/dominant-strategies/go-quai v0.40.1-0.20250122223617-a4a37ee56094
+	github.com/dominant-strategies/go-quai v0.40.1-0.20250128175737-9bcde6715a99
 	github.com/dominant-strategies/go-quai-stratum v0.3.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.17.0
